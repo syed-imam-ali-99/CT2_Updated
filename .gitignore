@@ -4,7 +4,7 @@
 *.pickle
 *.pyc
 __pycache__/
-claude.md
+CLAUDE.md
 
 #output images
 results/
