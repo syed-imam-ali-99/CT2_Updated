@@ -1,0 +1,33 @@
+# ==============================================================================
+# CT2 Colorization Transformer - Path Configuration
+# ==============================================================================
+# Update these paths according to your environment before running any scripts.
+# Relative paths are resolved from the project root directory.
+# ==============================================================================
+
+# --- Dataset ---
+dataset_dir: "/data/swarnim/DATA/swarnim/imagenet5k"
+
+# --- Output ---
+log_dir: "logs"
+output_dir: "results/imagenet"
+
+# --- Resources (pretrained weights, color priors) ---
+resources_dir: "segm/resources"
+
+pretrained_weights:
+  vit_tiny_patch16_384: "segm/resources/vit_tiny_patch16_384.npz"
+  vit_small_patch16_384: "segm/resources/vit_small_patch16_384.npz"
+  vit_base_patch16_384: "segm/resources/vit_base_patch16_384.npz"
+  vit_large_patch16_384: "segm/resources/L_16-i21k-300ep-lr_0.001-aug_medium1-wd_0.1-do_0.1-sd_0.1--imagenet2012-steps_20k-lr_0.01-res_384.npz"
+  vit_tiny_patch16_224: "segm/resources/vit_tiny_patch16_224.npz"
+  vgg19_dir: "segm/resources"
+  inception_v3: "segm/resources/inception_v3_google-1a9a5a14.pth"
+
+# --- Data files ---
+mask_prior: "mask_prior.pickle"
+q_prior_dir: "q_prior_all"
+
+# --- Evaluation (set before running eval scripts) ---
+pred_dir: ""
+gt_dir: ""

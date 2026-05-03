@@ -15,6 +15,7 @@ from segm.model.utils import checkpoint_filter_fn
 from segm.model.decoder import DecoderLinear
 from segm.model.decoder import MaskTransformer
 from segm.model.segmenter import Segmenter
+from segm.config import load_paths, resolve_path
 import segm.utils.torch as ptu
 
 
@@ -69,29 +70,32 @@ def create_vit(model_cfg):
     )
     model = VisionTransformer(**model_cfg)
 
+    paths = load_paths()
+    weights = paths['pretrained_weights']
+
     if backbone == 'vit_tiny_patch16_384':
         print('backbone:', backbone)
-        pretrained_vit_pth = os.path.join(os.getcwd(), 'segm/resources/vit_tiny_patch16_384.npz')
+        pretrained_vit_pth = resolve_path(weights['vit_tiny_patch16_384'])
         model.load_pretrained(pretrained_vit_pth)
 
     elif backbone == 'vit_small_patch16_384':
         print('backbone:', backbone)
-        pretrained_vit_pth = os.path.join(os.getcwd(), 'segm/resources/vit_small_patch16_384.npz')
+        pretrained_vit_pth = resolve_path(weights['vit_small_patch16_384'])
         model.load_pretrained(pretrained_vit_pth)
 
     elif backbone == 'vit_base_patch16_384':
         print('backbone:', backbone)
-        pretrained_vit_pth = os.path.join(os.getcwd(), 'segm/resources/vit_base_patch16_384.npz')
+        pretrained_vit_pth = resolve_path(weights['vit_base_patch16_384'])
         model.load_pretrained(pretrained_vit_pth)
 
     elif backbone == 'vit_large_patch16_384':
         print('backbone:', backbone)
-        pretrained_vit_pth = os.path.join(os.getcwd(), 'segm/resources/vit_large_patch16_384.npz')
+        pretrained_vit_pth = resolve_path(weights['vit_large_patch16_384'])
         model.load_pretrained(pretrained_vit_pth)
     elif "deit" in backbone:
         load_pretrained(model, default_cfg, filter_fn=checkpoint_filter_fn)
     else:
-        pretrained_vit_pth = os.path.join(os.getcwd(), 'segm/resources/vit_tiny_patch16_224.npz')
+        pretrained_vit_pth = resolve_path(weights['vit_tiny_patch16_224'])
         model.load_pretrained(pretrained_vit_pth)
 
     return model

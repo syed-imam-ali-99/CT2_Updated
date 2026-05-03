@@ -70,7 +70,7 @@ class ImageNet_dataset(Dataset):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='evaluate')
-    parser.add_argument('--dataset_dir', type=str, default='/userhome/SUN_text2img/ImageNet')
+    parser.add_argument('--dataset_dir', type=str, default=None)
     parser.add_argument('--split', type=str, default='val')
     args = parser.parse_args()
     return args
@@ -78,7 +78,12 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    dataset_dir = args.dataset_dir
+    if args.dataset_dir is None:
+        from segm.config import load_paths
+        paths = load_paths()
+        dataset_dir = paths['dataset_dir']
+    else:
+        dataset_dir = args.dataset_dir
     split = args.split
     default_cielab = CIELAB()
     encode_ab = SoftEncodeAB(default_cielab)

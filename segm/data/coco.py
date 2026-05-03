@@ -13,7 +13,7 @@ from skimage import color
 from segm.data import utils
 import pickle
 import torch
-from segm.config import dataset_dir
+from segm.config import dataset_dir, load_paths, resolve_path
 # import cv2
 import collections
 import json
@@ -34,6 +34,7 @@ class COCODataset(Dataset):
         mask_num=4,
         mask_random=False,
         n_cls=313,
+        max_images=None,
     ):
         super().__init__()
         self.dataset_dir = dataset_dir
@@ -49,11 +50,15 @@ class COCODataset(Dataset):
         self.mask_random = mask_random
         assert self.crop_size % self.patch_size == 0
         self.filenames = self.load_filenames(self.dataset_dir, split)
+        if max_images is not None:
+            self.filenames = self.filenames[:max_images]
         self.n_cls = n_cls
 
         if self.add_mask:
-            assert os.path.exists(os.path.join('./', 'mask_prior.pickle'))
-            fp = open(os.path.join('./', 'mask_prior.pickle'), 'rb')
+            paths = load_paths()
+            mask_prior_path = resolve_path(paths['mask_prior'])
+            assert os.path.exists(mask_prior_path)
+            fp = open(mask_prior_path, 'rb')
             L_dict = pickle.load(fp)
             self.mask_L = np.zeros((mask_num, 313)).astype(np.bool)     # [4, 313]
             for key in range(101):
@@ -178,4 +183,3 @@ class COCODataset(Dataset):
         key = self.filenames[idx]
         img_l, img_ab, mask = self.get_img(key)
         return img_l, img_ab, key, mask
-

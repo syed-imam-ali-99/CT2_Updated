@@ -13,7 +13,7 @@ from skimage import color
 from segm.data import utils
 import pickle
 import torch
-from segm.config import dataset_dir
+from segm.config import dataset_dir, load_paths, resolve_path
 # import cv2
 import collections
 import json
@@ -32,9 +32,12 @@ class RandomDataset(Dataset):
         change_mask=False,
         multi_scaled=False,
         mask_num=4,
+        mask_random=False,
+        n_cls=313,
+        max_images=None,
     ):
         super().__init__()
-        self.dataset_dir = dataset_di
+        self.dataset_dir = dataset_dir
         self.crop_size = crop_size
         self.image_size = image_size
         self.split = split
@@ -45,11 +48,13 @@ class RandomDataset(Dataset):
         self.mask_num = mask_num
         assert self.crop_size % self.patch_size == 0
 
-        self.filenames = self.load_filenames(self.dataset_dir, split)
-        self.n_cls = 313
+        self.filenames = self.load_filenames(self.dataset_dir, split, max_images=max_images)
+        self.n_cls = n_cls
         if self.add_mask:
-            assert os.path.exists(os.path.join(self.dataset_dir, 'mask_prior.pickle'))
-            fp = open(os.path.join(self.dataset_dir, 'mask_prior.pickle'), 'rb')
+            paths = load_paths()
+            mask_prior_path = resolve_path(paths['mask_prior'])
+            assert os.path.exists(mask_prior_path)
+            fp = open(mask_prior_path, 'rb')
             L_dict = pickle.load(fp)
 
             self.mask_L = np.zeros((mask_num, 313)).astype(np.bool)     # [4, 313]
@@ -68,8 +73,17 @@ class RandomDataset(Dataset):
     def unwrapped(self):
         return self
 
-    def load_filenames(self, data_dir, split, filepath='fullfilenames.pickle'):
-        filenames = os.listdir(data_dir)
+    def load_filenames(self, data_dir, split, filepath='fullfilenames.pickle', max_images=None):
+        image_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.webp'}
+        filenames = []
+        for root, _, files in os.walk(data_dir):
+            for filename in files:
+                if os.path.splitext(filename)[1].lower() in image_extensions:
+                    full_path = os.path.join(root, filename)
+                    filenames.append(os.path.relpath(full_path, data_dir))
+        filenames = sorted(filenames)
+        if max_images is not None:
+            filenames = filenames[:max_images]
         return filenames
 
     def rgb_to_lab(self, img):
@@ -123,4 +137,3 @@ class RandomDataset(Dataset):
         key = self.filenames[idx]
         img_l, img_ab, mask = self.get_img(key)
         return img_l, img_ab, key, mask
-

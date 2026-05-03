@@ -198,7 +198,8 @@ def evaluate(
     add_fm,
     fm_weight,
     log_dir=None,
-    diversity_index=0
+    diversity_index=0,
+    output_dir=None,
 ):
     model_without_ddp = model
     if hasattr(model, "module"):
@@ -206,10 +207,14 @@ def evaluate(
     logger = MetricLogger(delimiter="  ")
     header = "Eval:"
     print_freq = 50
-    if log_dir is not None:
+    if output_dir is not None:
+        save_dir = output_dir
+    elif log_dir is not None:
         save_dir = os.path.join(log_dir, 'color_token_nums_78')
-        if not os.path.exists(save_dir):
-            os.mkdir(save_dir)
+    else:
+        save_dir = None
+    if save_dir is not None:
+        os.makedirs(save_dir, exist_ok=True)
     model.eval()
     total_psnr_cls, total_psnr_reg, fid_score = 0, 0, 0
     with torch.no_grad():
@@ -225,7 +230,7 @@ def evaluate(
                 else:
                     ab_pred, q_pred, q_actual, out_feature = model_without_ddp.inference(img_l, img_ab, None)
 
-            if log_dir is not None:
+            if save_dir is not None:
                 if ab_pred is not None:
                     save_imgs(img_l, img_ab, ab_pred, filename, save_dir)
 
@@ -249,7 +254,10 @@ def save_imgs(img_l, img_ab, ab_pred, filenames, dir):
         img_rgb = lab_to_rgb(img_lab_np)        # np.uint8      # [0-255]
         fake_rgb_list.append(img_rgb)
 
-        img_path = os.path.join(dir, 'fake_' + filenames[j])
+        rel_dir = os.path.dirname(filenames[j])
+        img_dir = os.path.join(dir, rel_dir)
+        os.makedirs(img_dir, exist_ok=True)
+        img_path = os.path.join(img_dir, 'fake_' + os.path.basename(filenames[j]))
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             io.imsave(img_path, fake_rgb_list[j].astype(np.uint8))
@@ -330,4 +338,3 @@ def xyz2rgb(xyz):
     rgb = (1.055*(rgb**(1./2.4)) - 0.055)*mask + 12.92*rgb*(1-mask)
 
     return rgb
-

@@ -84,7 +84,7 @@ def gather_data(seg_pred, tmp_dir=None):
     and loaded on the master node to compute metrics
     """
     if tmp_dir is None:
-        tmpprefix = os.path.expandvars("$WORK/temp")
+        tmpprefix = os.path.join(tempfile.gettempdir(), "segm_temp")
     else:
         tmpprefix = tmp_dir
     MAX_LEN = 512
@@ -623,7 +623,9 @@ def calculate_is(pred_dir):
 def calculate_fid(pred_dir, gt_dir):
     batch_size = 1
     new_batch_size = 1
-    incep_pth = os.path.join('resources', "inception_v3_google-1a9a5a14.pth")
+    from segm.config import load_paths, resolve_path
+    paths = load_paths()
+    incep_pth = resolve_path(paths['pretrained_weights']['inception_v3'])
 
     incep_state_dict = torch.load(incep_pth, map_location=lambda storage, loc: storage)
     block_idx = INCEPTION_V3_FID.BLOCK_INDEX_BY_DIM[2048]

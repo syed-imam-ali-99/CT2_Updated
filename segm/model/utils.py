@@ -527,8 +527,9 @@ def load_model(model_name, model_dir):
 class VGG19(torch.nn.Module):
     def __init__(self, requires_grad=False):
         super().__init__()
-        model_dir = os.path.join(os.getcwd(), 'segm/resources')
-        # model_dir = os.path.join(opt.pretrained_dir, 'vgg')
+        from segm.config import load_paths, resolve_path
+        paths = load_paths()
+        model_dir = resolve_path(paths['pretrained_weights']['vgg19_dir'])
         model = load_model('vgg19', model_dir)
         vgg_pretrained_features = model.features
         self.slice1 = torch.nn.Sequential()

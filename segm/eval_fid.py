@@ -1,6 +1,6 @@
 import torch
 import argparse
-from metrics import *
+from segm.metrics import *
 import numpy as np
 import os
 
