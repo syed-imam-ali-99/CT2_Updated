@@ -36,9 +36,6 @@ log_dir: "logs"                        # Training logs and checkpoints
 
 Pretrained weights, resource paths, and evaluation directories are also configured here.
 
-## Datasets
-We use [ImageNet](https://www.image-net.org/) (1.3M training images, 1000 categories). Testing uses the first 5k images of the public validation set, center cropped and resized to 256x256.
-
 ## Usage
 
 All scripts are in `scripts/`. Run from the project root with your venv activated:
@@ -101,13 +98,3 @@ segm/
 
 ## License
 Licensed under [Creative Commons Attribution-NonCommercial 4.0 International](https://creativecommons.org/licenses/by-nc/4.0/).
-
-## Citation
-```
-@InProceedings{CT2,
-  author = {Weng, Shuchen and Sun, Jimeng and Li, Yu and Li, Si and Shi, Boxin},
-  title = {CT2: Colorization Transformer via Color Tokens},
-  booktitle = {{ECCV}},
-  year = {2022}
-}
-```
