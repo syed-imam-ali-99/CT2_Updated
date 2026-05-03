@@ -1,63 +1,108 @@
-# CT<sup>2</sup>: Colorization Transformer via Color Tokens (official)
+# CT<sup>2</sup>: Colorization Transformer via Color Tokens
 
 ## Introduction
-This is the author's official PyTorch <b>CT<sup>2</sup></b> implementation.
+This is the official PyTorch **CT<sup>2</sup>** implementation.
 
-We present <b>C</b>olorization <b>T</b>ransformer via <b>C</b>olor <b>T</b>okens (<b>CT<sup>2</sup></b>) to colorize grayish images while dealing with incorrect semantic colors and undersaturation without any additional external priors.
+We present **C**olorization **T**ransformer via **C**olor **T**okens (**CT<sup>2</sup>**) to colorize grayish images while dealing with incorrect semantic colors and undersaturation without any additional external priors.
 
-<!-- ![test image size](https://github.com/shuchenweng/CT2/blob/main/application.png){:height="100%" width="100%"} -->
- <img src="https://github.com/shuchenweng/CT2/blob/main/application.png" align=center />
- 
+<img src="https://github.com/shuchenweng/CT2/blob/main/application.png" align=center />
 
 ## Prerequisites
-* Python 3.6
-* PyTorch 1.10
+* Python 3.10+
+* PyTorch 1.10+
 * NVIDIA GPU + CUDA cuDNN
 
 ## Installation
-Clone this repo: 
+
+Install dependencies:
+```bash
+pip install -r requirements.txt
 ```
-git clone https://github.com/shuchenweng/CT2.git
-```
-Install PyTorch and dependencies
-```
-http://pytorch.org
-```
-Install other python requirements
-```
-pip install -r requirement.txt
-```
-Download the pretrained vit model and move it to *segm/resources/vit_large_patch16_384.npz*
+
+Download the pretrained ViT-Large model and place it in `segm/resources/`:
 ```
 https://storage.googleapis.com/vit_models/augreg/L_16-i21k-300ep-lr_0.001-aug_medium1-wd_0.1-do_0.1-sd_0.1--imagenet2012-steps_20k-lr_0.01-res_384.npz
 ```
 
+## Configuration
+
+All file paths are centralized in `configs/paths.yaml`. Edit this file before running any scripts:
+
+```yaml
+dataset_dir: "/path/to/ImageNet"       # Dataset location
+output_dir: "results/imagenet"         # Where colorized images are saved
+log_dir: "logs"                        # Training logs and checkpoints
+```
+
+Pretrained weights, resource paths, and evaluation directories are also configured here.
 
 ## Datasets
-We use [ImageNet](https://www.image-net.org/) as our dataset, which includes 1.3M training data and covers 1000 categories. We test on the first 5k images of the public validation set, which is consistent with the previous [Colorization transformer](https://iclr.cc/virtual/2021/poster/2844). All the test images are center cropped and resized into 256 × 256 resolution.
+We use [ImageNet](https://www.image-net.org/) (1.3M training images, 1000 categories). Testing uses the first 5k images of the public validation set, center cropped and resized to 256x256.
 
-### 1) Training
-A training script example is below:
-```
-python -m torch.distributed.launch --nproc_per_node=8 -m segm.train --log-dir segm/vit-large --batch-size 48 --local_rank 0  --partial_finetune False --backbone vit_large_patch16_384 --color_position True --add_l1_loss True --l1_conv True --l1_weight 10 --amp
+## Usage
+
+All scripts are in `scripts/`. Run from the project root with your venv activated:
+```bash
+source .venv/bin/activate
 ```
 
-### 2) Testing
-To test your training weights, you could excute the script below:
+### 1) Training (Multi-GPU)
+```bash
+bash scripts/train.sh
 ```
-python -m torch.distributed.launch --nproc_per_node=1 -m segm.test --log-dir segm/vit-large --local_rank 0 --only_test True
-```
-We also publish the [pretrained weights](https://pan.baidu.com/s/1cak_aAHIaMTVpTLP0yqRyw) here. Download and decompress it with extraction code *v4ay*. After renaming the weight as *checkpoint.pth*, move it to *segm/vit-large* to enjoy the colorization! [Here](https://drive.google.com/file/d/15LsqvHu1_g6OEEUbir7i1wbLDxIP4LTU/view?usp=sharing) is the alternative link.
+Key parameters in `scripts/train.sh`:
+- `NUM_GPUS=8` — number of GPUs
+- `BATCH_SIZE=48` — total batch size (divided across GPUs)
+- `BACKBONE="vit_large_patch16_384"` — model architecture
+- `LOG_DIR="segm/vit-large"` — checkpoint directory
 
-If the colorization results are weired, please carefully check whether the pretrained weight path is correctly set.
+### 2) Inference (Colorize Images)
+```bash
+bash scripts/inference.sh
+```
+Key parameters in `scripts/inference.sh`:
+- `LOG_DIR="segm/vit-large"` — directory containing `checkpoint.pth`
+- `OUTPUT_DIR="results/coco"` — where colorized images are saved
+- `DATASET="coco"` — use `"random"` for custom image folders
+- `DATASET_DIR=""` — leave empty to use `configs/paths.yaml`, or set to a folder path
+
+Download pretrained weights: [Baidu Pan](https://pan.baidu.com/s/1cak_aAHIaMTVpTLP0yqRyw) (code: *v4ay*) or [Google Drive](https://drive.google.com/file/d/15LsqvHu1_g6OEEUbir7i1wbLDxIP4LTU/view?usp=sharing). Rename to `checkpoint.pth` and place in your `LOG_DIR`.
+
+### 3) Evaluation
+```bash
+bash scripts/eval_metrics.sh        # SSIM, PSNR, LPIPS
+bash scripts/eval_fid.sh            # FID score
+bash scripts/eval_colorfulness.sh   # Colorfulness metric
+```
+Pass `--pred_dir` and `--gt_dir` as arguments, or set `PRED_DIR`/`GT_DIR` environment variables.
+
+### 4) Data Preparation
+```bash
+bash scripts/make_q_actual.sh       # Generate color quantization ground truth
+```
+
+## Project Structure
+```
+configs/paths.yaml       # Centralized path configuration
+scripts/                 # Bash scripts for all operations
+train.py                 # Training entry point (multi-GPU, DDP)
+test.py                  # Inference entry point (single-GPU)
+segm/
+  config.py              # Config loader (paths.yaml + config.yml)
+  config.yml             # Model architectures & hyperparameters
+  engine.py              # Training/evaluation loops
+  metrics.py             # SSIM, PSNR, LPIPS, FID computation
+  model/                 # ViT encoder, decoder, segmenter
+  data/                  # Dataset loaders (ImageNet, custom)
+  optim/                 # Optimizer and LR scheduler
+  utils/                 # Distributed training, logging
+  resources/             # Pretrained weights (ViT, VGG19, etc.)
+```
 
 ## License
-Licensed under a [Creative Commons Attribution-NonCommercial 4.0 International](https://creativecommons.org/licenses/by-nc/4.0/).
-
-Except where otherwise noted, this content is published under a [CC BY-NC](https://creativecommons.org/licenses/by-nc/4.0/) license, which means that you can copy, remix, transform and build upon the content as long as you do not use the material for commercial purposes and give appropriate credit and provide a link to the license.
+Licensed under [Creative Commons Attribution-NonCommercial 4.0 International](https://creativecommons.org/licenses/by-nc/4.0/).
 
 ## Citation
-If you use this code for your research, please cite our papers [CT<sup>2</sup>: Colorization Transformer via Color Tokens](https://ci.idm.pku.edu.cn/Weng_ECCV22b.pdf)
 ```
 @InProceedings{CT2,
   author = {Weng, Shuchen and Sun, Jimeng and Li, Yu and Li, Si and Shi, Boxin},
